@@ -46,5 +46,5 @@ const SocialAuth = () => {
         </div>
     );
 };
-
+``
 export default SocialAuth;
