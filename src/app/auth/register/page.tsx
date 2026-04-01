@@ -73,7 +73,8 @@ const RegisterPage = () => {
         setCaptchaError(false);
 
         toast.success('Registrasi berhasil!', { theme: 'dark', position: 'top-right' });
-        router.push('/auth/login?success=1');
+        localStorage.setItem('registerSuccess', 'true');
+        router.push('/auth/login');    
     };
 
     return (
