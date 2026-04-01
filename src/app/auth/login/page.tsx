@@ -50,16 +50,7 @@ const LoginPage = () => {
 
     useEffect(() => {
         setCaptcha(GenerateCaptcha());
-    }, []);
-
-    // useEffect(() => {
-    //     if (searchParams.get('success') === '1') {
-    //         toast.success('Register berhasil!', {
-    //             theme: 'dark',
-    //             position: 'top-right',
-    //         });
-    //     }
-    // }, [searchParams]); 
+    }, []); 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target;
