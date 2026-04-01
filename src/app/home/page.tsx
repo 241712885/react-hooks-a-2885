@@ -1,10 +1,24 @@
 'use client';
-import React from 'react';
-import Game1 from '../../components/Game1';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Game1 from '@/src/components/Game1';
+
 export default function Home() {
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen min-w-screen">
-            <h1 className="text-4xl font-bold mb-4">Selamat Datang!</h1><Game1 />
-        </div>
-    );
+    const router = useRouter();
+    const [allowed, setAllowed] = useState(false);
+
+    useEffect(() => {
+        const isLogin = localStorage.getItem('isLogin');
+
+        if (isLogin !== 'true') {
+            router.replace('/auth/not-authorized');
+        } else {
+            setAllowed(true);
+        }
+    }, [router]);
+
+    if (!allowed) return null;
+
+    return <Game1 />;
 }

@@ -23,6 +23,18 @@ body{
   font-family: "Poppins", sans-serif;
 }
 
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-contacts-auto-fill-button,
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
+}
+
 /* container */
 .game-container{
   display:flex;
@@ -161,4 +173,20 @@ body{
 
 .error-message {
   @apply text-red-500 text-sm mt-1;
+}
+
+input[type="password"]::-webkit-textfield-decoration-container {
+  display: none !important;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-contacts-auto-fill-button {
+  visibility: hidden !important;
+  display: none !important;
+  pointer-events: none;
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
 }

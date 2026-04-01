@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AuthFormWrapper from '@/src/components/AuthFormWrapper';
 import SocialAuth from '../../../components/SocialAuth';
 import Link from 'next/link';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import { FiEye, FiEyeOff, FiRefreshCw } from 'react-icons/fi';
+import "react-toastify/dist/ReactToastify.css";
 
 interface LoginFormData {
     email: string;
@@ -20,20 +22,49 @@ interface ErrorObject {
     captcha?: string;
 }
 
-const DEFAULT_CAPTCHA = 'AbCdEf';
+const KEY_EMAIL = '2885@gmail.com';
+const KEY_PASSWORD = '241712885';
 
-const LoginPage = () => {
+const GenerateCaptcha = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+export default function LoginPage() {
     const router = useRouter();
     const [formData, setFormData] = useState<LoginFormData>({
         email: '',
         password: '',
         captchaInput: '',
+        rememberMe: false,
     });
+
     const [errors, setErrors] = useState<ErrorObject>({});
+    const [attempts, setAttempts] = useState(3); 
+    const [showPassword, setShowPassword] = useState(false);
+    const [captcha, setCaptcha] = useState(() => GenerateCaptcha());
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        if (searchParams.get('success') === '1') {
+            toast.success('Register berhasil!', {
+                theme: 'dark',
+                position: 'top-right',
+            });
+        }
+    }, [searchParams]); 
+
+    const handleRefreshCaptcha = () => {
+        setCaptcha(GenerateCaptcha());
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;   
-        setFormData(prev => ({ ...prev, [name]: value }));
+        const { name, value, type, checked } = e.target;
+        setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
         setErrors(prev => ({ ...prev, [name]: undefined }));
     };
 
@@ -42,104 +73,156 @@ const LoginPage = () => {
 
         const newErrors: ErrorObject = {};
         if (!formData.email.trim()) newErrors.email = 'Email tidak boleh kosong';
+            else if (formData.email.trim() !== KEY_EMAIL) newErrors.email = 'Email harus sesuai dengan format npm kalian (cth. 2885@gmail.com)';
         if (!formData.password.trim()) newErrors.password = 'Password tidak boleh kosong';
+            else if (formData.password.trim() !== KEY_PASSWORD) newErrors.password = 'Password harus sesuai dengan format npm kalian (cth. 241712885)';
         if (!formData.captchaInput.trim()) {
             newErrors.captcha = 'Captcha belum diisi';
-        } else if (formData.captchaInput.trim() !== DEFAULT_CAPTCHA) {
-            newErrors.captcha = 'Captcha salah';
+        } else if (formData.captchaInput !== captcha) {
+            newErrors.captcha = 'Captcha tidak valid';
         }
 
-        if (Object.keys(newErrors).length > 0) {
+        if (Object.keys(newErrors).length > 0) {    
             setErrors(newErrors);
-            toast.error('Login Gagal!', { theme: 'dark', position: 'top-right' });
+        
+            const newAttempts = Math.max(attempts - 1, 0);
+            setAttempts(newAttempts);
+            
+            if (newAttempts === 0) {
+                toast.error('Kesempatan login habis!', {theme: 'dark', position: 'top-right'});
+            } else {
+                toast.error(`Login gagal! Sisa kesempatan: ${newAttempts}`, {theme: 'dark', position: 'top-right'});
+            }
+
             return;
         }
 
+        localStorage.setItem('isLogin', 'true');
         toast.success('Login Berhasil!', { theme: 'dark', position: 'top-right' });
-        router.push('/home');
+        const redirect = searchParams.get('redirect') || '/home';
+
+        router.replace(redirect);
     };
 
     return (
-        <AuthFormWrapper title="Login">
-            <form onSubmit={handleSubmit} className="space-y-5 w-full">
-                <div className="space-y-2">
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-                    <input
-                        id="email"
-                        name="email" 
-                        value={formData.email}
-                        onChange={handleChange}
-                        className={`w-full px-4 py-2.5 rounded-lg border ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Masukkan email"
-                    />
-                    {errors.email && <p className="text-red-500 text-sm italic mt-1">{errors.email}</p>}
-                </div>
+        <>
+            <AuthFormWrapper title="Login">
+                <form onSubmit={handleSubmit} className="space-y-5 w-full">
+                    <p className="text-center text-gray-700 font-semibold">
+                        Sisa Kesempatan: {attempts}
+                    </p> 
 
-                <div className="space-y-2">
-                    <label htmlFor="password" className="text-sm font-medium text-gray-700">Password</label>
-                    <input
-                        id="password"
-                        name="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        className={`w-full px-4 py-2.5 rounded-lg border ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Masukkan password"
-                    />
-                    {errors.password && <p className="text-red-600 text-sm italic mt-1">{errors.password}</p>}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Email</label>
+                        <input
+                            name="email" 
+                            value={formData.email}
+                            onChange={handleChange}
+                            className={`w-full px-4 py-2.5 rounded-lg border ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+                            placeholder="Masukkan email"
+                        />
+                        {errors.email && <p className="text-red-500 text-sm italic mt-1">{errors.email}</p>}
+                    </div>
 
-                    <div className="flex items-center justify-between mt-2">
-                        <label className="flex items-center text-sm text-gray-700">
+                    <div>
+                        <label className="text-sm font-medium text-gray-700">Password</label>
+                        
+                        <div className="relative">
                             <input
-                                type="checkbox"
-                                name="remberMe"
-                                checked={formData.rememberMe || false}
-                                onChange={(e) => 
-                                    setFormData(prev => ({ ...prev, remberMe: e.target.checked }))}
-                                className="mr-2 h-4 w-4 rounded border-gray-300"
+                                type={showPassword ? 'text' : 'password'}
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                className={`w-full px-4 py-2.5 pr-12 rounded-lg border ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
+                                placeholder="Masukkan password"
                             />
-                            Ingat Saya
-                        </label>
-                        <Link href="/auth/forgot-password" className="text-blue-600 hover:text-blue-800 text-sm font-semibold">
-                            Lupa Password?
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(prev => !prev)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            >
+                                {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+                            </button>
+                        </div>
+                        
+                        {errors.password && (
+                            <p className="text-red-600 text-sm italic mt-1">
+                                {errors.password}
+                            </p>
+                        )}
+
+                        <div className="flex items-center justify-between mt-2">
+                            <label className="flex items-center text-sm text-gray-700">
+                                <input
+                                    type="checkbox"
+                                    name="rememberMe"
+                                    checked={formData.rememberMe}
+                                    onChange={handleChange} 
+                                    className="mr-2"
+                                />
+                                Ingat Saya
+                            </label>
+                            <Link href="/auth/forgot-password" className="text-blue-600 hover:text-blue-800 text-sm font-semibold">
+                                Forgot Password?
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <span>Captcha:</span>
+                            <span className="bg-gray-100 px-3 py-1.5 font-bold rounded">{captcha}</span>
+
+                            <button
+                                type="button"
+                                onClick={handleRefreshCaptcha}
+                                className="text-blue-600"
+                                >
+                                <FiRefreshCw size={20} />
+                            </button>
+                        </div>
+
+                        <input
+                            name="captchaInput"
+                            value={formData.captchaInput}
+                            onChange={handleChange}
+                            className={`w-full px-4 py-2.5 rounded-lg border`} 
+                            placeholder="Masukkan captcha"
+                        />
+                        {errors.captcha && <p className="text-red-500 text-sm italic mt-1">{errors.captcha}</p>}
+                    </div>             
+
+                    <button
+                        type="submit"
+                        disabled={attempts === 0}
+                        className={`w-full font-semibold py-2.5 px-4 rounded-lg ${attempts === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                    >
+                        Sign In
+                    </button>
+
+                    <button
+                        type="button"
+                        disabled={attempts !== 0}
+                        onClick={() => {
+                            setAttempts(3);
+                            toast.success('Kesempatan login berhasil direset!', { theme: 'dark', position: 'top-right' });
+                        }}
+                        className={`w-full font-semibold py-2.5 px-4 rounded-lg ${attempts === 0 ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-400 text-white cursor-not-allowed'}`}                
+                    >
+                        Reset Kesempatan
+                    </button>                
+
+                    <SocialAuth />
+
+                    <p className="mt-6 text-center text-sm text-gray-600">
+                        Tidak punya akun?{' '}
+                        <Link href="/auth/register" className="text-blue-600 hover:text-blue-800 font-semibold">
+                            Daftar
                         </Link>
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <div className="flex items-center space-x-3">
-                        <span className="text-sm font-medium text-gray-700">Captcha</span>
-                        <span className="font-mono text-lg font-bold text-gray-800 bg-gray-100 px-3 py-1.5 rounded">{DEFAULT_CAPTCHA}</span>
-                    </div>
-                    <input
-                        type="text"
-                        name="captchaInput"
-                        value={formData.captchaInput}
-                        onChange={handleChange}
-                        className={`w-full px-4 py-2.5 rounded-lg border ${errors.captcha ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Masukkan captcha"
-                    />
-                    {errors.captcha && <p className="text-red-500 text-sm italic mt-1">{errors.captcha}</p>}
-                </div>
-
-                <button
-                    type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg"
-                >
-                    Sign In
-                </button>
-
-                <SocialAuth />
-
-                <p className="mt-6 text-center text-sm text-gray-600">
-                    Tidak punya akun?{' '}
-                    <Link href="/auth/register" className="text-blue-600 hover:text-blue-800 font-semibold">
-                        Daftar
-                    </Link>
-                </p>
-            </form>
-        </AuthFormWrapper>
+                    </p>
+                </form>
+            </AuthFormWrapper>
+            <ToastContainer />
+        </>
     );
-};
-
-export default LoginPage;
+}
