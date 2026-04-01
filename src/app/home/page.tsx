@@ -6,7 +6,6 @@ import Game1 from '@/src/components/Game1';
 
 export default function Home() {
     const router = useRouter();
-    // const [allowed, setAllowed] = useState(false);
     const [isLogin, setIsLogin] = useState<boolean | null>(null);
 
     useEffect(() => {
