@@ -1,14 +1,14 @@
 'use client';
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+// import { useEffect } from "react";
 import { FiX } from "react-icons/fi";
 
 export default function NotAuthorized() {
     const router = useRouter();
-    const searchParams = useSearchParams();
+    // const searchParams = useSearchParams();
 
-    const redirect = searchParams.get("redirect") || "/home";
+    // const redirect = searchParams.get("redirect") || "/home";
 
     return (
         <div className="min-h-screen flex items-center justify-center">
