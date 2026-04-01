@@ -13,10 +13,11 @@ export default function Home() {
     useEffect(() => {
         const isLogin = localStorage.getItem('isLogin');
 
-        if (isLogin === 'true') {
-            setAllowed(true);
+        // ❌ kalau belum login → ke NOT AUTHORIZED dulu
+        if (isLogin !== 'true') {
+            router.replace('/auth/not-authorized?redirect=/home');
         } else {
-            router.replace('/auth/login?redirect=/home');
+            setAllowed(true);
         }
 
         setIsChecked(true);
